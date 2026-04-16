@@ -15,6 +15,8 @@ const ovDayProfit = document.getElementById("ovDayProfit");
 const ovAllProfit = document.getElementById("ovAllProfit");
 
 let config = null;
+const saveSuccessAudio = new Audio("./images/leisu.mp3");
+saveSuccessAudio.preload = "auto";
 
 function projectInputBlock(name, target) {
   return `
@@ -118,6 +120,8 @@ function renderTable(records) {
   recordsList.innerHTML = [...records]
     .reverse()
     .map((r) => {
+      const dayProfit = Number(r.day_profit || 0);
+      const toneClass = dayProfit > 0 ? "tone-win" : dayProfit < 0 ? "tone-loss" : "tone-flat";
       const projectRows = projects
         .map((p) => {
           const v = r.projects[p];
@@ -126,16 +130,15 @@ function renderTable(records) {
               <div class="c-project">${p}</div>
               <div class="c-cost">${formatMoney(v.cost)}</div>
               <div class="c-bonus">${formatMoney(v.bonus)}</div>
-              <div class="c-target">${formatMoney(v.daily_target_profit)}</div>
-              <div class="c-next ${profitDisplayClass(v.tomorrow_required_profit)}">${formatMoney(v.tomorrow_required_profit)}</div>
               <div class="c-profit ${profitDisplayClass(v.daily_total_profit)}">${formatMoney(v.daily_total_profit)}</div>
+              <div class="c-next ${profitDisplayClass(v.tomorrow_required_profit)}">${formatMoney(v.tomorrow_required_profit)}</div>
             </div>
           `;
         })
         .join("");
 
       return `
-        <article class="history-card">
+        <article class="history-card ${toneClass}">
           <div class="history-card-head">
             <div class="head-date">
               <strong>${r.record_date}</strong>
@@ -151,9 +154,8 @@ function renderTable(records) {
             <div class="h-project">项目</div>
             <div class="h-cost">投入</div>
             <div class="h-bonus">奖金</div>
-            <div class="h-target">目标</div>
-            <div class="h-next">明日需盈利</div>
-            <div class="h-profit">总盈利</div>
+            <div class="h-profit">盈利</div>
+            <div class="h-next">明日</div>
           </div>
 
           <div class="history-grid body">
@@ -162,9 +164,8 @@ function renderTable(records) {
               <div class="c-project">合计</div>
               <div class="c-cost">${formatMoney(projects.reduce((s, name) => s + Number(r.projects[name].cost || 0), 0))}</div>
               <div class="c-bonus">${formatMoney(projects.reduce((s, name) => s + Number(r.projects[name].bonus || 0), 0))}</div>
-              <div class="c-target">${formatMoney(projects.reduce((s, name) => s + Number(r.projects[name].daily_target_profit || 0), 0))}</div>
-              <div class="c-next">--</div>
               <div class="c-profit ${profitDisplayClass(r.day_profit)}">${formatMoney(r.day_profit)}</div>
+              <div class="c-next">--</div>
             </div>
           </div>
         </article>
@@ -239,6 +240,12 @@ form.addEventListener("submit", async (e) => {
       projects: collectProjects(),
     });
     formMsg.textContent = "保存成功";
+    try {
+      saveSuccessAudio.currentTime = 0;
+      await saveSuccessAudio.play();
+    } catch {
+      // ignore autoplay / decode errors
+    }
     await refreshTable();
   } catch (err) {
     formMsg.textContent = err.message;
