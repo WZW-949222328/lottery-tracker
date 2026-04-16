@@ -1,0 +1,18 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: lottery-backend
+    restart: always
+    volumes:
+      - ./backend/data:/app/data
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: lottery-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
